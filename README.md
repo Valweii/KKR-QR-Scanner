@@ -95,4 +95,3 @@ The app expects QR codes to contain JSON data in the following format:
 - **Camera not working**: Ensure HTTPS connection and camera permissions
 - **Database errors**: Check Supabase credentials and table structure
 - **QR code not scanning**: Ensure QR code contains valid JSON format
-# KKR-QR-Scanner
