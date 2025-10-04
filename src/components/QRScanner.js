@@ -170,11 +170,17 @@ const QRScanner = () => {
 
 
   const toggleCamera = () => {
-    setFacingMode(prevMode => prevMode === 'environment' ? 'user' : 'environment');
-    // Restart scanning with new camera
+    // Stop scanning first
     setIsScanning(false);
+    
+    // Then switch camera mode and restart after a delay
     setTimeout(() => {
-      setIsScanning(true);
+      setFacingMode(prevMode => prevMode === 'environment' ? 'user' : 'environment');
+      
+      // Wait a bit longer before restarting to ensure camera is released
+      setTimeout(() => {
+        setIsScanning(true);
+      }, 200);
     }, 100);
   };
 
@@ -189,6 +195,7 @@ const QRScanner = () => {
       <div className="camera-container">
         {isScanning && (
           <QrScanner
+            key={facingMode}
             ref={scannerRef}
             delay={300}
             facingMode={facingMode}
