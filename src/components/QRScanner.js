@@ -191,6 +191,7 @@ const QRScanner = () => {
           <QrScanner
             ref={scannerRef}
             delay={300}
+            facingMode={facingMode}
             style={{
               height: '100%',
               width: '100%',
@@ -198,9 +199,6 @@ const QRScanner = () => {
             onScan={handleScan}
             onError={(err) => {
               console.error('QR Scanner error:', err);
-            }}
-            constraints={{
-              facingMode: facingMode
             }}
           />
         )}
