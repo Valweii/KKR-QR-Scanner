@@ -10,7 +10,7 @@ const QRScanner = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [scanHistory, setScanHistory] = useState([]);
   const [isScanning, setIsScanning] = useState(true);
-  const [flashOn, setFlashOn] = useState(false);
+  const [facingMode, setFacingMode] = useState('environment'); // 'environment' for rear, 'user' for front
   const scannerRef = useRef(null);
 
   useEffect(() => {
@@ -168,9 +168,14 @@ const QRScanner = () => {
     setIsScanning(true);
   };
 
-  const toggleFlash = () => {
-    setFlashOn(!flashOn);
-    // Note: Flash control would need to be implemented based on the QR scanner library capabilities
+
+  const toggleCamera = () => {
+    setFacingMode(prevMode => prevMode === 'environment' ? 'user' : 'environment');
+    // Restart scanning with new camera
+    setIsScanning(false);
+    setTimeout(() => {
+      setIsScanning(true);
+    }, 100);
   };
 
   const refreshScanner = () => {
@@ -180,17 +185,6 @@ const QRScanner = () => {
 
   return (
     <div className="qr-scanner-container">
-      {/* Header */}
-      <div className="header">
-        <button className="back-button" onClick={() => window.history.back()}>
-          ←
-        </button>
-        <h1 className="header-title">Scan Ticket</h1>
-        <button className="refresh-button" onClick={refreshScanner}>
-          ↻
-        </button>
-      </div>
-
       {/* Camera View */}
       <div className="camera-container">
         {isScanning && (
@@ -205,15 +199,26 @@ const QRScanner = () => {
             onError={(err) => {
               console.error('QR Scanner error:', err);
             }}
+            constraints={{
+              facingMode: facingMode
+            }}
           />
         )}
         
-        {/* Flash toggle button */}
+        {/* Camera swap button */}
         <button 
-          className={`flash-button ${flashOn ? 'active' : ''}`}
-          onClick={toggleFlash}
+          className="camera-swap-button"
+          onClick={toggleCamera}
+          title={`Switch to ${facingMode === 'environment' ? 'front' : 'rear'} camera`}
         >
-          🔦
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 10C13.1046 10 14 9.10457 14 8C14 6.89543 13.1046 6 12 6C10.8954 6 10 6.89543 10 8C10 9.10457 10.8954 10 12 10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M18 8H20C20.5304 8 21.0391 8.21071 21.4142 8.58579C21.7893 8.96086 22 9.46957 22 10V18C22 18.5304 21.7893 19.0391 21.4142 19.4142C21.0391 19.7893 20.5304 20 20 20H4C3.46957 20 2.96086 19.7893 2.58579 19.4142C2.21071 19.0391 2 18.5304 2 18V10C2 9.46957 2.21071 8.96086 2.58579 8.58579C2.96086 8.21071 3.46957 8 4 8H6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M16 4H8C7.46957 4 6.96086 4.21071 6.58579 4.58579C6.21071 4.96086 6 5.46957 6 6V8H18V6C18 5.46957 17.7893 4.96086 17.4142 4.58579C17.0391 4.21071 16.5304 4 16 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M19 13L17 15L19 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M5 13L7 15L5 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 19V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </button>
       </div>
 
@@ -227,8 +232,8 @@ const QRScanner = () => {
 
       {/* Footer */}
       <div className="footer">
-        <div className="footer-text">AOG Conference 2025 - AOG Conference</div>
-        <div className="footer-text">GMS Puri</div>
+        <div className="footer-text">Created To Connect</div>
+        <div className="footer-text">Coach Sky</div>
       </div>
 
       {/* Confirmation Popup */}

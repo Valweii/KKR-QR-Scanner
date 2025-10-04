@@ -49,7 +49,8 @@
   overflow: hidden;
 }
 
-.flash-button {
+
+.camera-swap-button {
   position: absolute;
   top: 16px;
   right: 16px;
@@ -58,23 +59,27 @@
   border-radius: 50%;
   width: 40px;
   height: 40px;
-  font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
   z-index: 10;
+  color: #333;
 }
 
-.flash-button:hover {
+.camera-swap-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.camera-swap-button:hover {
   background: rgba(255, 255, 255, 1);
   transform: scale(1.05);
 }
 
-.flash-button.active {
-  background: #ffeb3b;
-  color: #000;
+.camera-swap-button:active {
+  transform: scale(0.95);
 }
 
 /* Instruction Text */
