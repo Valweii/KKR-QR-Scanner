@@ -39,9 +39,6 @@ export const updateTicketRegistration = async (ticketId) => {
     const wibTime = new Date(now.getTime() + (7 * 60 * 60 * 1000));
     const wibISOString = wibTime.toISOString();
     
-    // Also create a properly formatted WIB timestamp
-    const wibFormatted = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Jakarta' }).replace(' ', 'T') + '+07:00';
-    
     console.log('🕐 Current UTC time:', now.toISOString());
     console.log('🕐 WIB time (UTC+7):', wibISOString);
     console.log('🕐 WIB formatted:', wibFormatted);
@@ -51,7 +48,7 @@ export const updateTicketRegistration = async (ticketId) => {
       .from('registrations')
       .update({ 
         reregistered: true,
-        datereregistered: wibFormatted
+        datereregistered: wibISOString
       })
       .eq('ticketid', ticketId)
       .select('*')
