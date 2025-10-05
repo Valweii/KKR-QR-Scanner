@@ -41,7 +41,6 @@ export const updateTicketRegistration = async (ticketId) => {
     
     console.log('🕐 Current UTC time:', now.toISOString());
     console.log('🕐 WIB time (UTC+7):', wibISOString);
-    console.log('🕐 WIB formatted:', wibFormatted);
     console.log('🕐 Jakarta time readable:', now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
     
     const { data, error } = await supabase
@@ -52,10 +51,6 @@ export const updateTicketRegistration = async (ticketId) => {
       })
       .eq('ticketid', ticketId)
       .select('*')
-
-    console.log('Update response:', { data, error });
-    console.log('Data length:', data ? data.length : 'No data');
-    console.log('Data content:', data);
 
     if (error) {
       console.error('❌ Update error:', error);
@@ -74,7 +69,6 @@ export const updateTicketRegistration = async (ticketId) => {
       throw new Error('No rows were updated - this might be due to Row Level Security policies blocking the update');
     }
 
-    console.log('✅ Successfully updated ticket');
     return { data, error: null }
   } catch (error) {
     console.error('Error updating ticket registration:', error)
@@ -85,17 +79,12 @@ export const updateTicketRegistration = async (ticketId) => {
 // Function to get ticket details
 export const getTicketDetails = async (ticketId) => {
   try {
-    console.log('🔍 Fetching ticket details for ID:', ticketId);
-    console.log('Searching in table: registrations');
-    
     const { data, error } = await supabase
       .from('registrations') // Updated to use 'registrations' table
       .select('*')
       .eq('ticketid', ticketId) // Updated to use 'ticketid' column (lowercase)
       .single()
 
-    console.log('Database query response:', { data, error });
-    
     if (error) {
       console.error('❌ Database query error:', error);
       console.error('Error details:', {
@@ -105,12 +94,6 @@ export const getTicketDetails = async (ticketId) => {
         code: error.code
       });
       throw error
-    }
-
-    if (data) {
-      console.log('✅ Ticket found:', data);
-    } else {
-      console.log('❌ No ticket found with that ID');
     }
 
     return { data, error: null }
