@@ -18,6 +18,7 @@ const QRScanner = () => {
   const [showCameraDropdown, setShowCameraDropdown] = useState(false);
   const scannerRef = useRef(null);
   const lastScannedTicketRef = useRef(null); // Track last scanned ticket to prevent duplicates
+  const isProcessingRef = useRef(false); // Use ref for immediate updates without waiting for React state
 
   useEffect(() => {
     // Load scan history from localStorage on component mount
@@ -55,13 +56,18 @@ const QRScanner = () => {
   }, []);
 
   const handleScan = async (data) => {
-    // Check if we're already processing
-    if (!data || isProcessing) {
+    // Check if we're already processing using ref for immediate check
+    if (!data || isProcessingRef.current) {
+      if (isProcessingRef.current) {
+        console.log('⏸️ Scan blocked - already processing');
+      }
       return;
     }
     
     // DEBUG: Log raw QR code data
     console.log('=== QR CODE DEBUG INFO ===');
+    console.log('🟢 isProcessing:', isProcessingRef.current);
+    console.log('🎯 lastScannedTicket:', lastScannedTicketRef.current);
     console.log('Raw QR code data:', data);
     console.log('Data type:', typeof data);
     console.log('Data length:', data ? (typeof data === 'string' ? data.length : 'Object') : 'N/A');
@@ -85,7 +91,8 @@ const QRScanner = () => {
         return;
       }
       
-      // Mark as processing to prevent duplicate scans
+      // Mark as processing to prevent duplicate scans (both ref and state)
+      isProcessingRef.current = true;
       setIsProcessing(true);
       
       // Check if ticket exists in database
@@ -102,27 +109,30 @@ const QRScanner = () => {
           hint: error.hint,
           code: error.code
         });
-        alert('Error fetching ticket details. Please try again.');
-        setIsProcessing(false);
-        return;
-      }
+          alert('Error fetching ticket details. Please try again.');
+          isProcessingRef.current = false;
+          setIsProcessing(false);
+          return;
+        }
 
-      if (!ticketDetails) {
-        console.log('❌ Ticket not found in database');
-        alert('Ticket not found in database.');
-        setIsProcessing(false);
-        return;
-      }
+        if (!ticketDetails) {
+          console.log('❌ Ticket not found in database');
+          alert('Ticket not found in database.');
+          isProcessingRef.current = false;
+          setIsProcessing(false);
+          return;
+        }
 
-      console.log('✅ Ticket found in database:', ticketDetails);
-      console.log('Already registered?', ticketDetails.reregistered);
+        console.log('✅ Ticket found in database:', ticketDetails);
+        console.log('Already registered?', ticketDetails.reregistered);
 
-      if (ticketDetails.reregistered) {
-        console.log('⚠️ Ticket already registered');
-        alert('Ticket already scanned!');
-        setIsProcessing(false);
-        return;
-      }
+        if (ticketDetails.reregistered) {
+          console.log('⚠️ Ticket already registered');
+          alert('Ticket already scanned!');
+          isProcessingRef.current = false;
+          setIsProcessing(false);
+          return;
+        }
 
       // Play beep sound on successful scan
       playBeepFromFile();
@@ -156,6 +166,7 @@ const QRScanner = () => {
       }
       
       alert('Invalid QR code format. Please scan a valid ticket.');
+      isProcessingRef.current = false;
       setIsProcessing(false);
     }
     
@@ -199,6 +210,7 @@ const QRScanner = () => {
       setShowPopup(false);
       setScannedData(null);
       lastScannedTicketRef.current = null; // Clear immediately for next ticket
+      isProcessingRef.current = false;
       setIsProcessing(false);
       
       alert('Ticket successfully registered!');
@@ -209,15 +221,20 @@ const QRScanner = () => {
       setShowPopup(false);
       setScannedData(null);
       lastScannedTicketRef.current = null; // Clear on error to allow retry
+      isProcessingRef.current = false;
       setIsProcessing(false);
     }
   };
 
   const handleCancel = () => {
+    console.log('🚫 Cancel button pressed - resetting scanner state');
     setShowPopup(false);
     setScannedData(null);
     lastScannedTicketRef.current = null; // Clear on cancel to allow re-scan
+    isProcessingRef.current = false;
     setIsProcessing(false);
+    console.log('✅ Scanner reset - ready for next scan');
+    console.log('🔍 Current state - isProcessingRef:', isProcessingRef.current, 'lastScannedTicket:', lastScannedTicketRef.current);
   };
 
 
@@ -239,6 +256,7 @@ const QRScanner = () => {
 
   const refreshScanner = () => {
     setIsScanning(true);
+    isProcessingRef.current = false;
     setIsProcessing(false);
     setScannedData(null);
     lastScannedTicketRef.current = null;
