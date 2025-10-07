@@ -18,7 +18,6 @@ const QRScanner = () => {
   const [showCameraDropdown, setShowCameraDropdown] = useState(false);
   const scannerRef = useRef(null);
   const lastScannedTicketRef = useRef(null); // Track last scanned ticket to prevent duplicates
-  const scanCooldownRef = useRef(false); // Cooldown to prevent rapid re-scans
 
   useEffect(() => {
     // Load scan history from localStorage on component mount
@@ -56,8 +55,8 @@ const QRScanner = () => {
   }, []);
 
   const handleScan = async (data) => {
-    // Check if we're already processing or in cooldown period
-    if (!data || isProcessing || scanCooldownRef.current) {
+    // Check if we're already processing
+    if (!data) {
       return;
     }
     
@@ -196,20 +195,11 @@ const QRScanner = () => {
       setScanHistory(updatedHistory);
       localStorage.setItem('scanHistory', JSON.stringify(updatedHistory));
 
-      // Close popup and allow next scan
+      // Close popup and allow next scan immediately
       setShowPopup(false);
       setScannedData(null);
-      
-      // Add a short cooldown before allowing next scan
-      scanCooldownRef.current = true;
-      setTimeout(() => {
-        scanCooldownRef.current = false;
-        setIsProcessing(false);
-        // Clear the last scanned ticket after cooldown to allow re-scanning if needed
-        setTimeout(() => {
-          lastScannedTicketRef.current = null;
-        }, 1000);
-      }, 500); // 500ms cooldown after confirmation
+      lastScannedTicketRef.current = null; // Clear immediately for next ticket
+      setIsProcessing(false);
       
       alert('Ticket successfully registered!');
       
@@ -252,7 +242,6 @@ const QRScanner = () => {
     setIsProcessing(false);
     setScannedData(null);
     lastScannedTicketRef.current = null;
-    scanCooldownRef.current = false;
   };
 
   return (
