@@ -11,6 +11,7 @@ const QRScanner = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [scanHistory, setScanHistory] = useState([]);
   const [isScanning, setIsScanning] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false); // Prevent duplicate scans while keeping camera active
   const [facingMode, setFacingMode] = useState('environment'); // 'environment' for rear, 'user' for front
   const [cameras, setCameras] = useState([]);
   const [selectedCamera, setSelectedCamera] = useState('');
@@ -53,8 +54,8 @@ const QRScanner = () => {
   }, []);
 
   const handleScan = async (data) => {
-    if (data && isScanning) {
-      setIsScanning(false);
+    if (data && !isProcessing) {
+      setIsProcessing(true); // Prevent duplicate scans while keeping camera active
       
       // DEBUG: Log raw QR code data
       console.log('=== QR CODE DEBUG INFO ===');
@@ -90,14 +91,14 @@ const QRScanner = () => {
             code: error.code
           });
           alert('Error fetching ticket details. Please try again.');
-          setIsScanning(true);
+          setIsProcessing(false);
           return;
         }
 
         if (!ticketDetails) {
           console.log('❌ Ticket not found in database');
           alert('Ticket not found in database.');
-          setIsScanning(true);
+          setIsProcessing(false);
           return;
         }
 
@@ -107,7 +108,7 @@ const QRScanner = () => {
         if (ticketDetails.reregistered) {
           console.log('⚠️ Ticket already registered');
           alert('Ticket already scanned!');
-          setIsScanning(true);
+          setIsProcessing(false);
           return;
         }
 
@@ -140,7 +141,7 @@ const QRScanner = () => {
         }
         
         alert('Invalid QR code format. Please scan a valid ticket.');
-        setIsScanning(true);
+        setIsProcessing(false);
       }
       
       console.log('=== END QR CODE DEBUG ===');
@@ -180,10 +181,10 @@ const QRScanner = () => {
       setScanHistory(updatedHistory);
       localStorage.setItem('scanHistory', JSON.stringify(updatedHistory));
 
-      // Close popup and resume scanning
+      // Close popup and allow next scan
       setShowPopup(false);
       setScannedData(null);
-      setIsScanning(true);
+      setIsProcessing(false);
       
       alert('Ticket successfully registered!');
       
@@ -192,14 +193,14 @@ const QRScanner = () => {
       alert('Error registering ticket. Please try again.');
       setShowPopup(false);
       setScannedData(null);
-      setIsScanning(true);
+      setIsProcessing(false);
     }
   };
 
   const handleCancel = () => {
     setShowPopup(false);
     setScannedData(null);
-    setIsScanning(true);
+    setIsProcessing(false);
   };
 
 
@@ -221,6 +222,7 @@ const QRScanner = () => {
 
   const refreshScanner = () => {
     setIsScanning(true);
+    setIsProcessing(false);
     setScannedData(null);
   };
 
