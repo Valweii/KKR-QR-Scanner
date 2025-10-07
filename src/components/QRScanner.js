@@ -3,6 +3,7 @@ import QrScanner from 'react-qr-scanner';
 import { updateTicketRegistration, getTicketDetails } from '../supabase';
 import ConfirmationPopup from './ConfirmationPopup';
 import ScanHistory from './ScanHistory';
+import { playBeepFromFile } from '../utils/soundEffects';
 import './QRScanner.css';
 
 const QRScanner = () => {
@@ -110,6 +111,9 @@ const QRScanner = () => {
           return;
         }
 
+        // Play beep sound on successful scan
+        playBeepFromFile();
+        
         // Show confirmation popup
         console.log('✅ Showing confirmation popup');
         setScannedData(ticketData);
@@ -242,6 +246,18 @@ const QRScanner = () => {
             }}
           />
         )}
+        
+        {/* Scanning frame overlay */}
+        <div className="scan-frame-overlay">
+          <div className="scan-frame">
+            <div className="corner corner-top-left"></div>
+            <div className="corner corner-top-right"></div>
+            <div className="corner corner-bottom-left"></div>
+            <div className="corner corner-bottom-right"></div>
+            <div className="scanning-line"></div>
+          </div>
+          <div className="scan-instruction">Place the code inside the frame</div>
+        </div>
         
         {/* Camera selection dropdown */}
         <div className="camera-selector">
