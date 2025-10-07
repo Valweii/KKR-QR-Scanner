@@ -56,7 +56,7 @@ const QRScanner = () => {
 
   const handleScan = async (data) => {
     // Check if we're already processing
-    if (!data) {
+    if (!data || isProcessing) {
       return;
     }
     
