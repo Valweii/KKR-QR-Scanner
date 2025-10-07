@@ -17,7 +17,6 @@ const QRScanner = () => {
   const [selectedCamera, setSelectedCamera] = useState('');
   const [showCameraDropdown, setShowCameraDropdown] = useState(false);
   const scannerRef = useRef(null);
-  const lastScannedTicketRef = useRef(null); // Track last scanned ticket to prevent duplicates
   const isProcessingRef = useRef(false); // Use ref for immediate updates without waiting for React state
 
   useEffect(() => {
@@ -64,36 +63,21 @@ const QRScanner = () => {
       return;
     }
     
-    // DEBUG: Log raw QR code data
-    console.log('=== QR CODE DEBUG INFO ===');
-    console.log('🟢 isProcessing:', isProcessingRef.current);
-    console.log('🎯 lastScannedTicket:', lastScannedTicketRef.current);
-    console.log('Raw QR code data:', data);
-    console.log('Data type:', typeof data);
-    console.log('Data length:', data ? (typeof data === 'string' ? data.length : 'Object') : 'N/A');
-    console.log('Data preview (first 100 chars):', data && typeof data === 'string' ? data.substring(0, 100) : (data?.text ? data.text.substring(0, 100) : 'N/A'));
+    // Extract the text from the QR code data object
+    const qrText = data.text || data;
     
     try {
-      // Extract the text from the QR code data object
-      const qrText = data.text || data;
-      console.log('Extracted QR text:', qrText);
-      
       // Parse the QR code data
       const ticketData = JSON.parse(qrText);
-      console.log('✅ Successfully parsed JSON:', ticketData);
+      
+      // Mark as processing IMMEDIATELY to prevent duplicate scans (both ref and state)
+      isProcessingRef.current = true;
+      setIsProcessing(true);
+      
+      console.log('=== QR CODE SCAN START ===');
       console.log('Ticket ID:', ticketData.ticketId);
       console.log('Name:', ticketData.name);
       console.log('Event:', ticketData.event);
-      
-      // Check if this is the same ticket we just scanned
-      if (lastScannedTicketRef.current === ticketData.ticketId) {
-        console.log('⏭️ Skipping duplicate scan of ticket:', ticketData.ticketId);
-        return;
-      }
-      
-      // Mark as processing to prevent duplicate scans (both ref and state)
-      isProcessingRef.current = true;
-      setIsProcessing(true);
       
       // Check if ticket exists in database
       console.log('🔍 Searching for ticket in database...');
@@ -137,40 +121,17 @@ const QRScanner = () => {
       // Play beep sound on successful scan
       playBeepFromFile();
       
-      // Store the last scanned ticket ID
-      lastScannedTicketRef.current = ticketData.ticketId;
-      
       // Show confirmation popup
       console.log('✅ Showing confirmation popup');
       setScannedData(ticketData);
       setShowPopup(true);
       
     } catch (error) {
-      console.error('❌ Error parsing QR code:', error);
-      console.error('Parse error details:', {
-        message: error.message,
-        stack: error.stack
-      });
-      console.log('Raw data that failed to parse:', data);
-      
-      // Try to show what the data looks like
-      if (data) {
-        console.log('Attempting to identify data format...');
-        if (data.startsWith('{')) {
-          console.log('Data appears to be JSON but failed to parse');
-        } else if (data.includes('http')) {
-          console.log('Data appears to be a URL');
-        } else {
-          console.log('Data format unknown');
-        }
-      }
-      
+      console.error('❌ Invalid QR code format');
       alert('Invalid QR code format. Please scan a valid ticket.');
       isProcessingRef.current = false;
       setIsProcessing(false);
     }
-    
-    console.log('=== END QR CODE DEBUG ===');
   };
 
   const handleConfirm = async () => {
@@ -209,32 +170,29 @@ const QRScanner = () => {
       // Close popup and allow next scan immediately
       setShowPopup(false);
       setScannedData(null);
-      lastScannedTicketRef.current = null; // Clear immediately for next ticket
       isProcessingRef.current = false;
       setIsProcessing(false);
       
+      console.log('✅ Ticket registered - ready for next scan');
       alert('Ticket successfully registered!');
       
     } catch (error) {
-      console.error('Error updating ticket:', error);
+      console.error('❌ Error updating ticket:', error);
       alert('Error registering ticket. Please try again.');
       setShowPopup(false);
       setScannedData(null);
-      lastScannedTicketRef.current = null; // Clear on error to allow retry
       isProcessingRef.current = false;
       setIsProcessing(false);
     }
   };
 
   const handleCancel = () => {
-    console.log('🚫 Cancel button pressed - resetting scanner state');
+    console.log('🚫 Cancel - resetting scanner');
     setShowPopup(false);
     setScannedData(null);
-    lastScannedTicketRef.current = null; // Clear on cancel to allow re-scan
     isProcessingRef.current = false;
     setIsProcessing(false);
-    console.log('✅ Scanner reset - ready for next scan');
-    console.log('🔍 Current state - isProcessingRef:', isProcessingRef.current, 'lastScannedTicket:', lastScannedTicketRef.current);
+    console.log('✅ Ready for next scan');
   };
 
 
@@ -255,11 +213,12 @@ const QRScanner = () => {
   };
 
   const refreshScanner = () => {
+    console.log('🔄 Refreshing scanner');
     setIsScanning(true);
     isProcessingRef.current = false;
     setIsProcessing(false);
     setScannedData(null);
-    lastScannedTicketRef.current = null;
+    setShowPopup(false);
   };
 
   return (
