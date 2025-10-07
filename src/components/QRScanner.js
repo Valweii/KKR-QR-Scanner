@@ -17,6 +17,8 @@ const QRScanner = () => {
   const [selectedCamera, setSelectedCamera] = useState('');
   const [showCameraDropdown, setShowCameraDropdown] = useState(false);
   const scannerRef = useRef(null);
+  const lastScannedTicketRef = useRef(null); // Track last scanned ticket to prevent duplicates
+  const scanCooldownRef = useRef(false); // Cooldown to prevent rapid re-scans
 
   useEffect(() => {
     // Load scan history from localStorage on component mount
@@ -54,97 +56,111 @@ const QRScanner = () => {
   }, []);
 
   const handleScan = async (data) => {
-    if (data && !isProcessing) {
+    // Check if we're already processing or in cooldown period
+    if (!data || isProcessing || scanCooldownRef.current) {
+      return;
+    }
+    
+    // DEBUG: Log raw QR code data
+    console.log('=== QR CODE DEBUG INFO ===');
+    console.log('Raw QR code data:', data);
+    console.log('Data type:', typeof data);
+    console.log('Data length:', data ? (typeof data === 'string' ? data.length : 'Object') : 'N/A');
+    console.log('Data preview (first 100 chars):', data && typeof data === 'string' ? data.substring(0, 100) : (data?.text ? data.text.substring(0, 100) : 'N/A'));
+    
+    try {
+      // Extract the text from the QR code data object
+      const qrText = data.text || data;
+      console.log('Extracted QR text:', qrText);
       
-      // DEBUG: Log raw QR code data
-      console.log('=== QR CODE DEBUG INFO ===');
-      console.log('Raw QR code data:', data);
-      console.log('Data type:', typeof data);
-      console.log('Data length:', data ? (typeof data === 'string' ? data.length : 'Object') : 'N/A');
-      console.log('Data preview (first 100 chars):', data && typeof data === 'string' ? data.substring(0, 100) : (data?.text ? data.text.substring(0, 100) : 'N/A'));
+      // Parse the QR code data
+      const ticketData = JSON.parse(qrText);
+      console.log('✅ Successfully parsed JSON:', ticketData);
+      console.log('Ticket ID:', ticketData.ticketId);
+      console.log('Name:', ticketData.name);
+      console.log('Event:', ticketData.event);
       
-      try {
-        // Extract the text from the QR code data object
-        const qrText = data.text || data;
-        console.log('Extracted QR text:', qrText);
-        
-        // Parse the QR code data
-        const ticketData = JSON.parse(qrText);
-        console.log('✅ Successfully parsed JSON:', ticketData);
-        console.log('Ticket ID:', ticketData.ticketId);
-        console.log('Name:', ticketData.name);
-        console.log('Event:', ticketData.event);
-        
-        // Check if ticket exists in database
-        console.log('🔍 Searching for ticket in database...');
-        const { data: ticketDetails, error } = await getTicketDetails(ticketData.ticketId);
-        
-        console.log('Database response:', { ticketDetails, error });
-        
-        if (error) {
-          console.error('❌ Error fetching ticket:', error);
-          console.error('Error details:', {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code
-          });
-          alert('Error fetching ticket details. Please try again.');
-          setIsProcessing(false);
-          return;
-        }
-
-        if (!ticketDetails) {
-          console.log('❌ Ticket not found in database');
-          alert('Ticket not found in database.');
-          setIsProcessing(false);
-          return;
-        }
-
-        console.log('✅ Ticket found in database:', ticketDetails);
-        console.log('Already registered?', ticketDetails.reregistered);
-
-        if (ticketDetails.reregistered) {
-          console.log('⚠️ Ticket already registered');
-          alert('Ticket already scanned!');
-          setIsProcessing(false);
-          return;
-        }
-
-        // Play beep sound on successful scan
-        playBeepFromFile();
-        
-        // Show confirmation popup
-        console.log('✅ Showing confirmation popup');
-        setScannedData(ticketData);
-        setShowPopup(true);
-        
-      } catch (error) {
-        console.error('❌ Error parsing QR code:', error);
-        console.error('Parse error details:', {
-          message: error.message,
-          stack: error.stack
-        });
-        console.log('Raw data that failed to parse:', data);
-        
-        // Try to show what the data looks like
-        if (data) {
-          console.log('Attempting to identify data format...');
-          if (data.startsWith('{')) {
-            console.log('Data appears to be JSON but failed to parse');
-          } else if (data.includes('http')) {
-            console.log('Data appears to be a URL');
-          } else {
-            console.log('Data format unknown');
-          }
-        }
-        
-        alert('Invalid QR code format. Please scan a valid ticket.');
-        setIsProcessing(false);
+      // Check if this is the same ticket we just scanned
+      if (lastScannedTicketRef.current === ticketData.ticketId) {
+        console.log('⏭️ Skipping duplicate scan of ticket:', ticketData.ticketId);
+        return;
       }
       
-      console.log('=== END QR CODE DEBUG ===');
+      // Mark as processing to prevent duplicate scans
+      setIsProcessing(true);
+      
+      // Check if ticket exists in database
+      console.log('🔍 Searching for ticket in database...');
+      const { data: ticketDetails, error } = await getTicketDetails(ticketData.ticketId);
+      
+      console.log('Database response:', { ticketDetails, error });
+      
+      if (error) {
+        console.error('❌ Error fetching ticket:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        alert('Error fetching ticket details. Please try again.');
+        setIsProcessing(false);
+        return;
+      }
+
+      if (!ticketDetails) {
+        console.log('❌ Ticket not found in database');
+        alert('Ticket not found in database.');
+        setIsProcessing(false);
+        return;
+      }
+
+      console.log('✅ Ticket found in database:', ticketDetails);
+      console.log('Already registered?', ticketDetails.reregistered);
+
+      if (ticketDetails.reregistered) {
+        console.log('⚠️ Ticket already registered');
+        alert('Ticket already scanned!');
+        setIsProcessing(false);
+        return;
+      }
+
+      // Play beep sound on successful scan
+      playBeepFromFile();
+      
+      // Store the last scanned ticket ID
+      lastScannedTicketRef.current = ticketData.ticketId;
+      
+      // Show confirmation popup
+      console.log('✅ Showing confirmation popup');
+      setScannedData(ticketData);
+      setShowPopup(true);
+      
+    } catch (error) {
+      console.error('❌ Error parsing QR code:', error);
+      console.error('Parse error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+      console.log('Raw data that failed to parse:', data);
+      
+      // Try to show what the data looks like
+      if (data) {
+        console.log('Attempting to identify data format...');
+        if (data.startsWith('{')) {
+          console.log('Data appears to be JSON but failed to parse');
+        } else if (data.includes('http')) {
+          console.log('Data appears to be a URL');
+        } else {
+          console.log('Data format unknown');
+        }
+      }
+      
+      alert('Invalid QR code format. Please scan a valid ticket.');
+      setIsProcessing(false);
     }
+    
+    console.log('=== END QR CODE DEBUG ===');
   };
 
   const handleConfirm = async () => {
@@ -183,7 +199,17 @@ const QRScanner = () => {
       // Close popup and allow next scan
       setShowPopup(false);
       setScannedData(null);
-      setIsProcessing(false);
+      
+      // Add a short cooldown before allowing next scan
+      scanCooldownRef.current = true;
+      setTimeout(() => {
+        scanCooldownRef.current = false;
+        setIsProcessing(false);
+        // Clear the last scanned ticket after cooldown to allow re-scanning if needed
+        setTimeout(() => {
+          lastScannedTicketRef.current = null;
+        }, 1000);
+      }, 500); // 500ms cooldown after confirmation
       
       alert('Ticket successfully registered!');
       
@@ -192,6 +218,7 @@ const QRScanner = () => {
       alert('Error registering ticket. Please try again.');
       setShowPopup(false);
       setScannedData(null);
+      lastScannedTicketRef.current = null; // Clear on error to allow retry
       setIsProcessing(false);
     }
   };
@@ -199,6 +226,7 @@ const QRScanner = () => {
   const handleCancel = () => {
     setShowPopup(false);
     setScannedData(null);
+    lastScannedTicketRef.current = null; // Clear on cancel to allow re-scan
     setIsProcessing(false);
   };
 
@@ -223,6 +251,8 @@ const QRScanner = () => {
     setIsScanning(true);
     setIsProcessing(false);
     setScannedData(null);
+    lastScannedTicketRef.current = null;
+    scanCooldownRef.current = false;
   };
 
   return (
