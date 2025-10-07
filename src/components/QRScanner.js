@@ -55,7 +55,6 @@ const QRScanner = () => {
 
   const handleScan = async (data) => {
     if (data && !isProcessing) {
-      setIsProcessing(true); // Prevent duplicate scans while keeping camera active
       
       // DEBUG: Log raw QR code data
       console.log('=== QR CODE DEBUG INFO ===');
