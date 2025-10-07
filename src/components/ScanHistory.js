@@ -1,7 +1,7 @@
 import React from 'react';
 import './ScanHistory.css';
 
-const ScanHistory = ({ history }) => {
+const ScanHistory = ({ history, notification }) => {
   const getStatusColor = (status) => {
     return status === 'success' ? '#4CAF50' : '#9C27B0';
   };
@@ -12,7 +12,21 @@ const ScanHistory = ({ history }) => {
 
   return (
     <div className="scan-history">
-      <h2 className="history-title">History Scan</h2>
+      <div className="history-header">
+        <h2 className="history-title">History Scan</h2>
+        {notification && (
+          <div className={`notification ${notification.type}`}>
+            <span className="notification-icon">
+              {notification.type === 'success' ? '✓' : '✕'}
+            </span>
+            <span className="notification-text">
+              {notification.type === 'success' 
+                ? `${notification.name} registered successfully` 
+                : `${notification.name} already registered`}
+            </span>
+          </div>
+        )}
+      </div>
       <div className="history-list">
         {history.length === 0 ? (
           <div className="no-history">No scans yet</div>

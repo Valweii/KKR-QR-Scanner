@@ -5,6 +5,12 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  position: relative;
+}
+
+.history-header {
+  position: relative;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .history-title {
@@ -13,7 +19,57 @@
   color: #333;
   padding: 16px 16px 8px 16px;
   margin: 0;
-  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Notification Bar */
+.notification {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease-out;
+  max-width: 250px;
+  z-index: 10;
+}
+
+.notification.success {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.notification.error {
+  background-color: #f44336;
+  color: white;
+}
+
+.notification-icon {
+  font-size: 16px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.notification-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .history-list {
@@ -114,6 +170,18 @@
   .history-title {
     font-size: 15px;
     padding: 12px 12px 6px 12px;
+  }
+  
+  .notification {
+    top: 8px;
+    right: 12px;
+    font-size: 12px;
+    padding: 6px 10px;
+    max-width: 200px;
+  }
+  
+  .notification-icon {
+    font-size: 14px;
   }
   
   .history-item {
