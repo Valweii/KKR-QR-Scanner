@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import QrScanner from 'react-qr-scanner';
 import { updateTicketRegistration, getTicketDetails } from '../supabase';
+import ConfirmationPopup from './ConfirmationPopup';
 import ScanHistory from './ScanHistory';
 import { playBeepFromFile } from '../utils/soundEffects';
 import './QRScanner.css';
@@ -13,6 +14,8 @@ const QRScanner = () => {
   const [selectedCamera, setSelectedCamera] = useState('');
   const [showCameraDropdown, setShowCameraDropdown] = useState(false);
   const [notification, setNotification] = useState(null); // { type: 'success' | 'error', name: string }
+  const [showPopup, setShowPopup] = useState(false);
+  const [scannedData, setScannedData] = useState(null);
   const scannerRef = useRef(null);
   const isProcessingRef = useRef(false);
 
@@ -86,7 +89,6 @@ const QRScanner = () => {
           console.error('❌ Error fetching ticket:', error);
           isProcessingRef.current = false;
           setIsProcessing(false);
-          restartCamera();
           return;
         }
 
@@ -94,7 +96,6 @@ const QRScanner = () => {
           console.log('❌ Ticket not found in database');
           isProcessingRef.current = false;
           setIsProcessing(false);
-          restartCamera();
           return;
         }
 
@@ -108,16 +109,20 @@ const QRScanner = () => {
         setNotification({ type: 'error', name: ticketData.name });
         setTimeout(() => setNotification(null), 3000);
         
-        // Restart camera briefly
-        restartCamera();
-        
+        // Reset processing state - camera stays active
         isProcessingRef.current = false;
         setIsProcessing(false);
         return;
       }
 
-      // Auto-register the ticket immediately (no popup)
-      await registerTicket(ticketData);
+      // Play beep sound on successful scan
+      playBeepFromFile();
+      
+      // Show confirmation popup
+      console.log('✅ Showing confirmation popup');
+      setScannedData(ticketData);
+      setShowPopup(true);
+      // Note: isProcessing stays true while popup is showing to prevent re-scanning
       
     } catch (error) {
       console.error('❌ Invalid QR code format');
@@ -126,19 +131,14 @@ const QRScanner = () => {
     }
   };
 
-  const restartCamera = () => {
-    setIsScanning(false);
-    setTimeout(() => {
-      setIsScanning(true);
-    }, 100);
-  };
+  const handleConfirm = async () => {
+    if (!scannedData) return;
 
-  const registerTicket = async (ticketData) => {
     try {
-      console.log('🔄 Registering ticket:', ticketData.ticketId);
+      console.log('🔄 Registering ticket:', scannedData.ticketId);
       
       // Update ticket registration status
-      const { data, error } = await updateTicketRegistration(ticketData.ticketId);
+      const { data, error } = await updateTicketRegistration(scannedData.ticketId);
       
       if (error) {
         console.error('❌ Update failed:', error);
@@ -147,11 +147,8 @@ const QRScanner = () => {
 
       console.log('✅ Ticket registered successfully');
 
-      // Play beep sound on success
-      playBeepFromFile();
-
       // Show success notification
-      setNotification({ type: 'success', name: ticketData.name });
+      setNotification({ type: 'success', name: scannedData.name });
       setTimeout(() => setNotification(null), 3000);
 
       // Add to scan history
@@ -162,8 +159,8 @@ const QRScanner = () => {
           hour: '2-digit', 
           minute: '2-digit' 
         }),
-        name: ticketData.name,
-        event: ticketData.event,
+        name: scannedData.name,
+        event: scannedData.event,
         status: 'success'
       };
 
@@ -171,24 +168,36 @@ const QRScanner = () => {
       setScanHistory(updatedHistory);
       localStorage.setItem('scanHistory', JSON.stringify(updatedHistory));
 
-      // Restart camera briefly
-      restartCamera();
-      
+      // Close popup and reset - camera stays active
+      setShowPopup(false);
+      setScannedData(null);
       isProcessingRef.current = false;
       setIsProcessing(false);
+      
+      console.log('✅ Ready for next scan');
       
     } catch (error) {
       console.error('❌ Error registering ticket:', error);
       
       // Show error notification
-      setNotification({ type: 'error', name: ticketData.name });
+      setNotification({ type: 'error', name: scannedData.name });
       setTimeout(() => setNotification(null), 3000);
       
-      restartCamera();
-      
+      // Close popup and reset
+      setShowPopup(false);
+      setScannedData(null);
       isProcessingRef.current = false;
       setIsProcessing(false);
     }
+  };
+
+  const handleCancel = () => {
+    console.log('🚫 Cancel - resetting scanner');
+    setShowPopup(false);
+    setScannedData(null);
+    isProcessingRef.current = false;
+    setIsProcessing(false);
+    console.log('✅ Ready for next scan');
   };
 
 
@@ -297,6 +306,15 @@ const QRScanner = () => {
         <div className="footer-text">Created To Connect</div>
         <div className="footer-text">Coach Sky</div>
       </div>
+
+      {/* Confirmation Popup */}
+      {showPopup && scannedData && (
+        <ConfirmationPopup
+          ticketData={scannedData}
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+        />
+      )}
     </div>
   );
 };
