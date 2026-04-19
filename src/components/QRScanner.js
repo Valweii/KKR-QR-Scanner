@@ -70,7 +70,7 @@ const QRScanner = () => {
       setIsProcessing(true);
       
       // Check if ticket exists in database
-      const { data: ticketDetails, error } = await getTicketDetails(ticketData.ticketId);
+      const { data: ticketDetails, error } = await getTicketDetails(ticketData.ticket_id);
       
         if (error) {
           isProcessingRef.current = false;
@@ -87,7 +87,7 @@ const QRScanner = () => {
       if (ticketDetails.reregistered) {
         
         // Show error notification
-        setNotification({ type: 'error', name: ticketData.name });
+        setNotification({ type: 'error', name: ticketData.nama });
         setTimeout(() => setNotification(null), 3000);
         
         // Reset processing state - camera stays active
@@ -115,14 +115,14 @@ const QRScanner = () => {
 
     try {
       // Update ticket registration status
-      const { data, error } = await updateTicketRegistration(scannedData.ticketId);
+      const { data, error } = await updateTicketRegistration(scannedData.ticket_id);
       
       if (error) {
         throw error;
       }
 
       // Show success notification
-      setNotification({ type: 'success', name: scannedData.name });
+      setNotification({ type: 'success', name: scannedData.nama });
       setTimeout(() => setNotification(null), 3000);
 
       // Add to scan history
@@ -133,8 +133,8 @@ const QRScanner = () => {
           hour: '2-digit', 
           minute: '2-digit' 
         }),
-        name: scannedData.name,
-        event: scannedData.event,
+        nama: scannedData.nama,
+        universitas: scannedData.universitas,
         status: 'success'
       };
 
@@ -157,7 +157,7 @@ const QRScanner = () => {
     } catch (error) {
       
       // Show error notification
-      setNotification({ type: 'error', name: scannedData.name });
+      setNotification({ type: 'error', name: scannedData.nama });
       setTimeout(() => setNotification(null), 3000);
       
       // Reset all states and re-enable camera

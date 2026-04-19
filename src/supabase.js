@@ -14,9 +14,9 @@ export const updateTicketRegistration = async (ticketId) => {
     // First, let's check if the ticket exists and get its current state
     console.log('🔍 Checking ticket existence before update...');
     const { data: existingTicket, error: checkError } = await supabase
-      .from('registrations')
+      .from('users')
       .select('*')
-      .eq('ticketid', ticketId)
+      .eq('ticket_id', ticketId)
       .single();
 
     if (checkError) {
@@ -44,12 +44,11 @@ export const updateTicketRegistration = async (ticketId) => {
     console.log('🕐 Jakarta time readable:', now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
     
     const { data, error } = await supabase
-      .from('registrations')
+      .from('users')
       .update({ 
-        reregistered: true,
-        datereregistered: wibISOString
+        reregistered: true
       })
-      .eq('ticketid', ticketId)
+      .eq('ticket_id', ticketId)
       .select('*')
 
     if (error) {
@@ -80,9 +79,9 @@ export const updateTicketRegistration = async (ticketId) => {
 export const getTicketDetails = async (ticketId) => {
   try {
     const { data, error } = await supabase
-      .from('registrations') // Updated to use 'registrations' table
+      .from('users') // Updated to use 'users' table
       .select('*')
-      .eq('ticketid', ticketId) // Updated to use 'ticketid' column (lowercase)
+      .eq('ticket_id', ticketId) // Updated to use 'ticket_id' column
       .single()
 
     if (error) {

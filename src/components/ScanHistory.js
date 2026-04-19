@@ -41,8 +41,8 @@ const ScanHistory = ({ history, notification }) => {
               </div>
               <div className="item-content">
                 <div className="item-time">{item.timestamp}</div>
-                <div className="item-event">{item.event}</div>
-                <div className="item-name">{item.name}</div>
+                <div className="item-event">{item.universitas}</div>
+                <div className="item-name">{item.nama}</div>
               </div>
             </div>
           ))

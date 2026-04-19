@@ -15,32 +15,32 @@ const ConfirmationPopup = ({ ticketData, onConfirm, onCancel }) => {
           <div className="ticket-info">
             <div className="info-row">
               <span className="label">Name:</span>
-              <span className="value">{ticketData.name}</span>
+              <span className="value">{ticketData.nama}</span>
             </div>
             
             <div className="info-row">
-              <span className="label">Event:</span>
-              <span className="value">{ticketData.event}</span>
+              <span className="label">Universitas:</span>
+              <span className="value">{ticketData.universitas}</span>
             </div>
             
-            {ticketData.cgMember && (
+            {ticketData.domisili && (
               <div className="info-row">
-                <span className="label">CG Number:</span>
-                <span className="value">{ticketData.cgNumber}</span>
+                <span className="label">Domisili:</span>
+                <span className="value">{ticketData.domisili}</span>
               </div>
             )}
             
-            {ticketData.instagram && (
+            {ticketData.usia && (
               <div className="info-row">
-                <span className="label">Instagram:</span>
-                <span className="value">{ticketData.instagram}</span>
+                <span className="label">Usia:</span>
+                <span className="value">{ticketData.usia}</span>
               </div>
             )}
             
-            {ticketData.phone && (
+            {ticketData.no_telp && (
               <div className="info-row">
                 <span className="label">Phone:</span>
-                <span className="value">{ticketData.phone}</span>
+                <span className="value">{ticketData.no_telp}</span>
               </div>
             )}
           </div>
